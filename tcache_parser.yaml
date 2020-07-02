@@ -1,0 +1,19 @@
+## only for 64-bits
+
+# typedef struct tcache_entry
+# {
+#     struct tcache_entry *next;
+# } tcache_entry;
+
+# typedef struct tcache_perthread_struct
+# {
+#     char counts[TCACHE_MAX_BINS];
+#     tcache_entry *entries[TCACHE_MAX_BINS];
+# } tcache_perthread_struct;
+
+#range: {start: 0x0, end: 0x250},
+tcache_entry: {
+  header: {start: 0x0, end: 0x10},
+  perthread_struct_count: {start: 0x10, end: 0x50},
+  perthread_struct_entries: {start: 0x50, end: 0x250},
+}

@@ -1,0 +1,60 @@
+{
+    "global_vars": [
+        6295856,
+        6295792,
+        6295872,
+        6295776,
+        6295808,
+        6295816,
+        6295824,
+        6295832
+    ],
+    "allocs": [
+        6295856,
+        6295792,
+        6295872,
+        6295776
+    ],
+    "mem2chunk_addr": 6295864,
+    "sdata_addrs": [],
+    "wtarget_addrs": [
+        6295808,
+        6295816,
+        6295824,
+        6295832
+    ],
+    "header_size_addr": 6295680,
+    "malloc_size_addrs": [
+        6295744,
+        6295752,
+        6295760,
+        6295768
+    ],
+    "malloc_size_bvs": [
+        "<BV64 0x8>",
+        "<BV64 0x8>",
+        "<BV64 0x8>",
+        "<BV64 0x8>"
+    ],
+    "fill_size_addrs": [
+        6295712,
+        6295720,
+        6295728,
+        6295736
+    ],
+    "fill_size_vars": [
+        "<BV64 0x0>",
+        "<BV64 0x0>",
+        "<BV64 0x0>",
+        "<BV64 0x0>"
+    ],
+    "overflow_sizes_addrs": [
+        6295840
+    ],
+    "overflow_sizes": [
+        "<BV64 0x0>"
+    ],
+    "arb_offset_vars": [],
+    "bf_offset_vars": [],
+    "winning_addr": 4195783
+}

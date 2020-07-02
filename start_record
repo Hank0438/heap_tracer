@@ -1,0 +1,148 @@
+{'global_config': '../analysis.yaml', 'allocator': '/media/sf_Documents/AEG/AEG/heaphopper_tracer/tests/libc-2.27/libc.so.6', 'libc': '/media/sf_Documents/AEG/AEG/heaphopper_tracer/tests/libc-2.27/libc.so.6', 'loader': '/media/sf_Documents/AEG/AEG/heaphopper_tracer/tests/libc-2.27/ld-linux-x86-64.so.2', 'create_files': False, 'wtarget_size': 4, 'sym_data_size': 0, 'zoo_depth': 8, 'zoo_actions': {'malloc': -1, 'free': -1, 'uaf': 1}, 'zoo_dir': '/tmp/zoo_dir', 'mcheck': 'disable', 'malloc_sizes': [8], 'overflow_sizes': [0], 'input_pre_constraint': False, 'input_values': 'any', 'header_size': 8, 'mem2chunk_offset': 16, 'chunk_fill_size': 'zero', 'vulns': ['bad_alloc'], 'pocs_path': 'pocs', 'fix_loader_problem': True, 'mem_corruption_fd': 3, 'log_level': 'INFO', 'store_desc': True, 'use_mem_limiter': True, 'mem_limit': 30, 'spiller': False, 'spiller_conf': {'min': 1, 'max': 2, 'staging_min': 1, 'staging_max': 2}, 'state_split_sizes': False, 'drop_errored': True, 'use_dfs': True, 'use_vsa': False, 'use_veritesting': False, 'stop_found': True, 'filter_fake_frees': False, 'use_concretizer': False, 'num_results': 1}
+allocator_path:  /media/sf_Documents/AEG/AEG/heaphopper_tracer/tests/libc-2.27/libc.so.6
+libc_path:  /media/sf_Documents/AEG/AEG/heaphopper_tracer/tests/libc-2.27/libc.so.6
+name:  __libc_start_main
+name:  free
+name:  puts
+name:  read
+name:  malloc
+name:  __tls_get_addr
+name:  _dl_exception_create
+name:  __tunable_get_val
+name:  _dl_find_dso_for_object
+@ angr init @write_target_var:  <Symbol "write_target" in tcache_poisoning.bin at 0x6010e0>
+libc_name:  libc.so.6
+allocator_name:  libc.so.6
+config['use_vsa']:  False
+<.bss | offset 0x1048, vaddr 0x601060, size 0xc8>
+0x602000
+<BV64 0x642000>
+set_brk_ret:  <BV64 0x642000>
+state.heap:  <angr.state_plugins.heap.heap_brk.SimHeapBrk object at 0x7f3671bf8780>
+state.heaphopper:  <analysis.heap_condition_tracker.HeapConditionTracker object at 0x7f3665e13cf8>
+malloc_addr:  0x1097070
+vuln:  []
+sm addr:  [<SimState @ 0x1021ab0>]
+vuln:  []
+sm addr:  [<SimState @ 0x400740>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000048>]
+vuln:  []
+sm addr:  [<SimState @ 0x4005da>]
+vuln:  []
+sm addr:  [<SimState @ 0x4004d0>]
+vuln:  []
+malloc(<SAO <BV64 0x200>>)
+malloc_addr:  0x1097070
+sm addr:  [<SimState @ 0x1097070>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000008>]
+vuln:  []
+sm addr:  [<SimState @ 0x116617c>]
+vuln:  []
+sm addr:  [<SimState @ 0x500018d>]
+vuln:  []
+sm addr:  [<SimState @ 0x11164b9>]
+vuln:  []
+sm addr:  [<SimState @ 0x500018d>]
+vuln:  []
+sm addr:  [<SimState @ 0x11164b9>]
+vuln:  []
+sm addr:  [<SimState @ 0x500018d>]
+vuln:  []
+sm addr:  [<SimState @ 0x11164b9>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000058>]
+vuln:  []
+sm addr:  [<SimState @ 0x4005ec>]
+vuln:  []
+sm addr:  [<SimState @ 0x4004a0>]
+vuln:  []
+ptr(<SAO <BV64 0x642260>>)
+free_addr:  0x1097950
+sm addr:  [<SimState @ 0x1097950>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000060>]
+vuln:  []
+sm addr:  [<SimState @ 0x4005fc>]
+vuln:  []
+sm addr:  [<SimState @ 0x4004d0>]
+vuln:  []
+malloc(<SAO <BV64 0x8>>)
+malloc_addr:  0x1097070
+sm addr:  [<SimState @ 0x1097070>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000058>]
+vuln:  []
+addr:  <SAO <BV64 0x642470>>
+ctrl_data_idx:  0
+sols:  [6562928]
+sm addr:  [<SimState @ 0x40060b>]
+vuln:  []
+sm addr:  [<SimState @ 0x4004a0>]
+vuln:  []
+ptr(<SAO <BV64 0x642470>>)
+free_addr:  0x1097950
+sm addr:  [<SimState @ 0x1097950>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000060>]
+vuln:  []
+sm addr:  [<SimState @ 0x400661>]
+vuln:  []
+sm addr:  [<SimState @ 0x5000181>]
+vuln:  []
+sm addr:  [<SimState @ 0x1110081>]
+vuln:  []
+sm addr:  [<SimState @ 0x4004d0>]
+vuln:  []
+malloc(<SAO <BV64 0x8>>)
+malloc_addr:  0x1097070
+sm addr:  [<SimState @ 0x1097070>]
+vuln:  []
+sm addr:  [<SimState @ 0x1097207>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000058>]
+vuln:  []
+addr:  <SAO <BV64 0x642470>>
+ctrl_data_idx:  1
+sols:  [6562928]
+sm addr:  [<SimState @ 0x40068b>]
+vuln:  []
+sm addr:  [<SimState @ 0x4006c0>]
+vuln:  []
+sm addr:  [<SimState @ 0x4006d2>]
+vuln:  []
+sm addr:  [<SimState @ 0x4004d0>]
+vuln:  []
+malloc(<SAO <BV64 0x8>>)
+malloc_addr:  0x1097070
+sm addr:  [<SimState @ 0x1097070>]
+vuln:  []
+sm addr:  [<SimState @ 0x1097089>]
+vuln:  []
+sm addr:  [<SimState @ 0x1097097>]
+vuln:  []
+sm addr:  [<SimState @ 0x10970a7>]
+vuln:  []
+sm addr:  [<SimState @ 0x10970af>]
+vuln:  []
+sm addr:  [<SimState @ 0x10970cf>]
+vuln:  []
+sm addr:  [<SimState @ 0x10971f0>]
+vuln:  []
+sm addr:  [<SimState @ 0x1097201>]
+vuln:  []
+sm addr:  [<SimState @ 0x1097207>]
+vuln:  []
+sm addr:  [<SimState @ 0x4000058>]
+vuln:  []
+addr:  <SAO <BV64 Reverse(file_0_memory_corruption_0_49_64{UNINITIALIZED})>>
+ctrl_data_idx:  2
+sols:  [6295782, 6295780]
+sm addr:  [<SimState @ 0x4006e1>]
+vuln:  [<SimState @ 0x4006e1>]
+sm addr:  []
+[<SimState @ 0x4006e1>]
+found_paths:  []
+found_paths:  [<SimState @ 0x4006e1>]
+@ test @

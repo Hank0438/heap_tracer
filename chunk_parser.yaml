@@ -1,0 +1,10 @@
+## only for 64-bits
+chunk: {
+  prev_szie: {start: 0x0, end: 0x8},
+  size: {start: 0x8, end: 0xc},
+  non_main_arena: {start: 0xc, end: 0xd},
+  is_mmapped: {start: 0xd, end: 0xe},
+  prev_in_use: {start: 0xe, end: 0x10},
+  fd: {start: 0x10, end: 0x18},
+  bk: {start: 0x18, end: 0x20},
+}
