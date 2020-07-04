@@ -11,11 +11,11 @@ mkvirtualenv -ppython3 heaphopper && pip install -e .
 ```
 
 * trace
-    ptmalloc:
+    * ptmalloc
     ```
     python3 start.py trace -a how2heap -e tcache_poisoning
     ```
-    jemalloc:
+    * jemalloc
     ```
     python3 start.py trace -a jemalloc -e arbitary_free
     ```
