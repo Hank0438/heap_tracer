@@ -11,7 +11,9 @@ from os.path import basename, dirname, abspath
 
 from ..utils.parse_config import parse_config
 
-
+'''
+include header
+'''
 def includes():
     return '\n'.join([
         '#include <malloc.h>',
@@ -23,7 +25,9 @@ def includes():
         '#include <mcheck.h>'
     ])
 
-
+'''
+declaration
+'''
 def ctrled_struct():
     return '\n'.join([
         'typedef struct __attribute__((__packed__)) {',
@@ -118,7 +122,9 @@ def symbolic_data(has_fake_free):
         ])
     return data
 
-
+'''
+transaction
+'''
 # bin_info['allocs'] -> list of (dst_symbol, size_symbol)
 def malloc(num):
     fill_code, fill_desc = fill_chunk(num)
