@@ -22,21 +22,17 @@ size_t write_target[4];
 size_t offset;
 size_t header_size;
 size_t mem2chunk_offset;
-size_t malloc_sizes[4]; //= { 0x8, 0x8, 0x8, 0x8 };
+size_t malloc_sizes[4];
 size_t overflow_sizes[1];
-size_t fill_sizes[4]; //= { 0x8, 0x8, 0x8, 0x8 };
+size_t fill_sizes[4];
 size_t arw_offsets[0];
 size_t bf_offsets[0];
 controlled_data __attribute__((aligned(16))) ctrl_data_0;
 controlled_data __attribute__((aligned(16))) ctrl_data_1;
 controlled_data __attribute__((aligned(16))) ctrl_data_2;
 controlled_data __attribute__((aligned(16))) ctrl_data_3;
-controlled_data __attribute__((aligned(16))) ctrl_data_4;
 
 int main(void) {
-	// void *local_chunk = malloc(0x100);
-	// local_chunk = "aaaaaaaaaaaaa";
-
 	void *dummy_chunk = malloc(0x200);
 	free(dummy_chunk);
 
@@ -50,10 +46,6 @@ int main(void) {
 		read(0, ((uint8_t *)ctrl_data_1.global_var)+i, 8);
 	}
 
-	ctrl_data_4.global_var = malloc(malloc_sizes[3]);
-	for (int i=0; i < fill_sizes[3]; i+=8) {
-		read(0, ((uint8_t *)ctrl_data_3.global_var)+i, 8);
-	}
 	free(ctrl_data_0.global_var);
 
 	// VULN: UAF
@@ -68,7 +60,6 @@ int main(void) {
 	for (int i=0; i < fill_sizes[3]; i+=8) {
 		read(0, ((uint8_t *)ctrl_data_3.global_var)+i, 8);
 	}
-
 
 	winning();
 	return 0;

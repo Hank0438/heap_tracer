@@ -9,6 +9,11 @@ global_config: ../analysis.yaml
 allocator: ../libc-2.27/libc.so.6
 libc: ../libc-2.27/libc.so.6
 loader: ../libc-2.27/ld-linux-x86-64.so.2
+
+# allocator: ../libc-2.31/libc.so.6
+# libc: ../libc-2.31/libc.so.6
+# loader: ../libc-2.31/ld-linux-x86-64.so.2
+
 # Create files ?
 create_files: False
 # Specify the write_target's size in qwords (controlled memory where you want to write to for arb. write)
