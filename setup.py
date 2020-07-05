@@ -23,5 +23,7 @@ setup(
         'pyyaml',
         'pyelftools',
         'pwntools',
+        'coloredlogs',
+        'pygdbmi',
    ],
 )

@@ -1,7 +1,9 @@
 import re
 import logging, coloredlogs
+from pygdbmi.gdbcontroller import GdbController
+from pprint import pprint
 import time
-import angelheap
+# import angelheap
 from pwn import *
 timestamp = int(time.time())
 
@@ -9,39 +11,8 @@ coloredlogs.install()
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
 
-# def r2_test():
-#     import r2pipe
-#     import json
-#     r2 = r2pipe.open("./playground.bin")
-#     r2 = r2pipe.open("./tests/how2heap_fastbin_dup/pocs/malloc_non_heap/fastbin_dup.bin/bin/poc_0_0.bin")
-#     r2.cmd('aaa')
-#     print(r2.cmd("afl"))
-#     print(r2.cmdj("aflj"))  # evaluates JSONs and returns an object
-#     r2.cmd('s main')
-#     functions = [func for func in json.loads(r2.cmd('aflj'))]
-#     with open('profile.rr2', 'w+') as f:
-#         f.write('#!/path/to/rarun2\nstdin="1222"')
-#     r2.cmd('e dbg.profile=profile.rr2')
-#     r2.cmd('doo; dm')
-
-#     import r2pipe
-
-#     R2 = r2pipe.open('/bin/ls')                         
-#     R2.cmd("aaaa")
-
-#     for func in R2.cmd('afbj @@f').split("\n")[:-1]:
-#         print(func)
-
-#     # sth = [hex(eval(func)[0]['addr']) for func in R2.cmd('afbj @@f').split("\n")[:-1]]
-#     # print(sth)
-
-binary = "./tests/how2heap_fastbin_dup/pocs/malloc_non_heap/fastbin_dup.bin/bin/poc_0_0.bin"
-# binary = "./tests/how2heap_fastbin_dup/fastbin_dup.bin"
-caller_address = []
-transactions = []
-
 '''
-transactions
+# transactions
     1. malloc(num)
         ctrl_data[num].global_var = malloc(malloc_sizes[num]);
     2. fill_chunk(num)
@@ -50,23 +21,23 @@ transactions
         }
     3. free(num)
         free(ctrl_data[num].global_var);
-    4. uaf(num)
-        read(FD, ctrl_data[num].global_var, header_size);
-    5. overflow(num, overflow_num)
+    4. overflow(num, overflow_num)
         offset = mem2chunk_offset;
         read(FD, ((char *) ctrl_data[num].global_var)-offset, overflow_sizes[overflow_num]);
+
+# the below transaction only valid for free chunk:
+    5. uaf(num)
+        read(FD, ctrl_data[num].global_var, header_size);
     6. fake_free(num)
         free(((uint8_t *) &sym_data[num].data) + mem2chunk_offset);
-                
-
-
+    7. double_free(num)
+        free(ctrl_data[num].global_var);
 '''
 
-
-def dump_heap_memory(dump_files=False, show_gdb_res=False):
+def get_transaction_breakpoint():
     global binary, caller_address, transactions
     import subprocess
-    grep_item = ["read@plt", "free@plt", "malloc@plt"]
+    grep_item = ["read@plt", "free@plt", "malloc@plt", "calloc@plt", "realloc@plt"]
     process = subprocess.Popen(['objdump', "-d", binary, "-M", "intel"], stdout=subprocess.PIPE)
     stdout = process.communicate()[0].decode().split("\n")
     for idx, asm in enumerate(stdout):
@@ -74,9 +45,12 @@ def dump_heap_memory(dump_files=False, show_gdb_res=False):
             if (g in asm) and ("call" in asm):
                 # print(asm)
                 transactions.append(asm)
+                addr = {}
+                asm = stdout[idx]
+                addr['before'] = int(asm[:asm.index(":")].strip(" "), 16)
                 asm = stdout[idx+1]
-                addr = int(asm[:asm.index(":")].strip(" "), 16)
-                print(hex(addr))
+                addr['after'] = int(asm[:asm.index(":")].strip(" "), 16)
+                print(hex(addr['after']))
                 caller_address.append(addr)
         # if (" <main>:" in asm):
         #     addr = int(asm[:asm.index(":")-7].strip(" "), 16)
@@ -84,50 +58,23 @@ def dump_heap_memory(dump_files=False, show_gdb_res=False):
         #     caller_address.append(addr)
 
 
-    # input("@")
-    # from pwn import *
-    # r = process(binary)
+def dump_heap_memory(dump_files=False, show_gdb_res=False):
+    global binary, caller_address, transactions, gdbmi
+    file_path = "/tmp/heap_gdb_" + str(timestamp)
 
-
-    from pygdbmi.gdbcontroller import GdbController
-    from pprint import pprint
-
-    gdbmi = GdbController()
-    # print(gdbmi.get_subprocess_cmd()) 
-    logger.info('-file-exec-file ' + binary)
-    response = gdbmi.write('-file-exec-file ' + binary)
-    if show_gdb_res: pprint(response)
-
-    # logger.info("break main")
-    # response = gdbmi.write('break main')
-    # pprint(response)
+    gdb_command('-file-exec-file ' + binary, show_gdb_res=True)
 
     for c in caller_address:
-        logger.info('-break-insert *' + str(c))
-        response = gdbmi.write('-break-insert *' + str(c))
-        if show_gdb_res: pprint(response)
+        gdb_command('-break-insert *' + str(c['after']), show_gdb_res=True)
 
-    # logger.info('-exec-run')
-    # response = gdbmi.write('-exec-run')
-    # pprint(response)
+    gdb_command('run', show_gdb_res=True)
 
-    # logger.info('attach')
-    # response = gdbmi.write('attach')
-    # pprint(response)
+    res = gdb_command('p main_arena', show_gdb_res=False)
+    main_arena = main_arena_parser(res)
+    print("main_arena['fastbinsY']: ", main_arena['fastbinsY'])
+    print("main_arena['top']: ", main_arena['top'])
 
-    logger.info('run')
-    response = gdbmi.write('run')
-    if show_gdb_res: pprint(response)
-
-    # logger.info('-exec-continue')
-    # response = gdbmi.write('-exec-continue')
-    # pprint(response)
-
-
-    logger.info('info proc mappings')
-    response = gdbmi.write('info proc mappings')
-    if show_gdb_res: pprint(response)
-
+    response = gdb_command('info proc mappings', show_gdb_res=True)
 
     heap_addr = []
     for entry in response:
@@ -138,28 +85,25 @@ def dump_heap_memory(dump_files=False, show_gdb_res=False):
             break
 
     for transaction_count in range(len(caller_address)):
-
         if dump_files:
-            dump_filename = "heap_gdb_" + str(timestamp) + "_" + str(transaction_count)
+            dump_filename = file_path + "_" + str(transaction_count)
             dump_payload = "dump memory " + dump_filename + " " + heap_addr[0] + " " + heap_addr[1]  
-            logger.info(dump_payload)
-            response = gdbmi.write(dump_payload)
-            if show_gdb_res: pprint(response)
+            response = gdb_command(dump_payload, show_gdb_res=True)
+            for entry in response:
+                if entry['message'] == "error":
+                    return
 
-        logger.info('-exec-continue')
-        response = gdbmi.write('-exec-continue')
-        if show_gdb_res: pprint(response)
-
-    # except:
-        # print("gdb write file error")
-    # pprint(response)
+        response = gdb_command('-exec-continue', show_gdb_res=True)
+        for entry in response:
+            if entry['message'] == "error":
+                return
 
 
-
-def diff_heap_memory():
+def diff_heap_memory(file_path="/tmp/heap_gdb_1593934091_"):
     global transactions
     for cnt in range(len(transactions)):
-        f = open("./heap_gdb_1590059065_" + str(cnt), "rb")
+        dump_filename = file_path + str(cnt)
+        f = open(dump_filename, "rb")
         memory = f.read()
         logger.info('show_tcache_entry '+ str(cnt))
         show_tcache_entry(memory, transactions[cnt])
@@ -217,33 +161,115 @@ def show_tcache_entry(memory, transaction=""):
 # for unknown allocator
 def show_offset_change():
     pass
+    
 
-def bar():
-    import time
-    import sys
+def dump_main_arena(dump_files=False, show_gdb_res=False):
+    global binary, caller_address, transactions
+    file_path = "/tmp/heap_gdb_" + str(timestamp)
 
-    toolbar_width = 40
+    gdb_command('-file-exec-file ' + binary, show_gdb_res=True)
 
-    # setup toolbar
-    sys.stdout.write("[%s]" % (" " * toolbar_width))
-    sys.stdout.flush()
-    sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
+    for c in caller_address:
+        gdb_command('-break-insert *' + str(c['after']), show_gdb_res=False)
 
-    for i in range(toolbar_width):
-        time.sleep(0.1) # do real work here
-        # update the bar
-        sys.stdout.write("-")
-        sys.stdout.flush()
+    gdb_command('run', show_gdb_res=True)
 
-    sys.stdout.write("]\n") # this ends the progress bar
+    res = gdb_command('p main_arena', show_gdb_res=False)
+    main_arena = main_arena_parser(res)
+    # print(main_arena['bins'])
+    print("main_arena['top']: ", main_arena['top'])
 
+def main_arena_parser(res):
+    res = gdb_response_concat(res)
+
+    res = res[res.find("{")+1:-3]
+    res = res.replace(" = ", ":")
+    res = res.replace(" ", "")
+    main_arena = {}
+    is_array = False
+    is_element = False
+    arr = []
+    element = ""
+    key = ""
+    for idx, r in enumerate(res):
+         
+        if r is ",":
+            if res[idx-1] is "}":
+                continue
+            if is_array is False:
+                main_arena[key] = element
+                # print(main_arena)
+                key = ""
+                element = ""
+                is_element = False
+            else:
+                arr.append(element)
+                element = ""
+            continue
+
+        if r is ":":
+            main_arena[key] = ""
+            is_element = True
+            continue
+
+        if (r is "{") and (is_array is False):
+            is_array = True
+            main_arena[key] = {}
+            arr = []
+            continue
+
+        if (r is "}") and (is_array is True):
+            is_array = False
+            is_element = False
+            arr.append(element)
+            main_arena[key] = arr
+            # print(main_arena)
+            arr = []
+            key = ""
+            element = ""
+            continue
+        
+        if (is_element is True):
+            element += r
+        else:
+            key += r
+
+    return main_arena
+        
+        
+def gdb_response_concat(res):
+    payload = ""
+    for r in res:
+        if (r['type'] == "console") & (r['stream'] == "stdout"):
+            payload += r['payload']
+    return payload
+
+def gdb_command(cmd, show_gdb_res=True):
+    global gdbmi
+    logger.info(cmd)
+    response = gdbmi.write(cmd)
+    if show_gdb_res: pprint(response)
+    return response
 
 if __name__ == "__main__":
-    config_file="/media/sf_Documents/AEG/AEG/heaphopper_tracer/tcache_parser.yaml"
-    # bar()
-    #dump_heap_memory(dump_files=True, show_gdb_res=True)
-    diff_heap_memory()
+    # binary = "./tests/how2heap_fastbin_dup/pocs/malloc_non_heap/fastbin_dup.bin/bin/poc_0_0.bin"
+    # binary = "./tests/how2heap_fastbin_dup/fastbin_dup.bin"
+    # binary = "./tests/how2heap_tcache_poisoning/tcache_poisoning.bin"
+    binary = "./tests/how2heap_heap_test/heap_test.bin"
+    config_file = "/media/sf_Documents/AEG/AEG/heaphopper_tracer/tcache_parser.yaml"
+    mem_file_path = "/tmp/heap_gdb_1593954912_"
+    caller_address = []
+    transactions = []
 
+    gdbmi = GdbController()
+    get_transaction_breakpoint()
+    # print(caller_address)
+    dump_heap_memory(dump_files=True, show_gdb_res=True)
+    diff_heap_memory(mem_file_path)
+
+
+
+    # dump_main_arena()
 
     # config = parse_yaml(config_file)
 

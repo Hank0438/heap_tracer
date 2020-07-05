@@ -41,15 +41,13 @@ int main(void) {
 		read(0, ((uint8_t *)ctrl_data_0.global_var)+i, 8);
 	}
 
-	ctrl_data_1.global_var = malloc(malloc_sizes[1]);
-	for (int i=0; i < fill_sizes[1]; i+=8) {
-		read(0, ((uint8_t *)ctrl_data_1.global_var)+i, 8);
-	}
 
 	free(ctrl_data_0.global_var);
 
 	// VULN: UAF
-	read(3, ctrl_data_0.global_var, header_size);
+	// read(0, ctrl_data_0.global_var, 8);
+	// read(3, ctrl_data_0.global_var, header_size); // header_size is 8
+	ctrl_data_0.global_var[0] = ((char *) &write_target);
 
 	ctrl_data_2.global_var = malloc(malloc_sizes[2]);
 	for (int i=0; i < fill_sizes[2]; i+=8) {
