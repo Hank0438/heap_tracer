@@ -113,8 +113,8 @@ def diff_heap_memory(file_path="/tmp/heap_gdb_1593934091_"):
         f = open(dump_filename, "rb")
         memory = f.read()
         logger.info('show_tcache_entry '+ str(cnt))
-        # show_tcache_entry(memory, transactions[cnt])
         parse_tcache(memory, transactions[cnt])
+        show_tcache_entry(transactions[cnt])
         # try:
         # except:
         #     print("sth wrong")
@@ -186,7 +186,11 @@ def parse_tcache(memory, transaction=""):
     parse_tcache_haeder(memory[0x0:0x10])
     parse_tcache_perthread_struct_counts(memory[0x10:0x50])
     parse_tcache_perthread_struct_entries(memory[0x50:0x250])
+    check_tcache_malloc_nonheap()
 
+def show_tcache_entry(transaction=""):
+    global tcache, TCACHE_MAX_BINS
+    global heap_start, heap_end
     #### print ####
     print("TCACHE_MAX_BINS: ", TCACHE_MAX_BINS)
     print("transaction: ", transaction)
@@ -198,7 +202,7 @@ def parse_tcache(memory, transaction=""):
     print("="*49)
     for key in tcache['perthread_struct_entries'].keys():
         print(f"+ entries[{key}]: {tcache['perthread_struct_entries'][key]}")
-    check_tcache_malloc_nonheap()  
+      
 
 # for unknown allocator
 def show_offset_change():
