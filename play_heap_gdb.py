@@ -5,6 +5,7 @@ from pprint import pprint
 import time
 # import angelheap
 from pwn import *
+from gen_zoo import malloc
 timestamp = int(time.time())
 
 coloredlogs.install()
@@ -60,6 +61,7 @@ def get_transaction_breakpoint():
 
 def dump_heap_memory(dump_files=False, show_gdb_res=False):
     global binary, caller_address, transactions, gdbmi
+    global heap_start, heap_end
     file_path = "/tmp/heap_gdb_" + str(timestamp)
 
     gdb_command('-file-exec-file ' + binary, show_gdb_res=True)
@@ -83,6 +85,9 @@ def dump_heap_memory(dump_files=False, show_gdb_res=False):
             heap_addr = re.findall(r'0x\d+', entry['payload'])
             # print(regex)
             break
+            
+    heap_start = int(heap_addr[0][2:], 16) 
+    heap_end = int(heap_addr[1][2:], 16)
 
     for transaction_count in range(len(caller_address)):
         if dump_files:
@@ -91,11 +96,13 @@ def dump_heap_memory(dump_files=False, show_gdb_res=False):
             response = gdb_command(dump_payload, show_gdb_res=True)
             for entry in response:
                 if entry['message'] == "error":
+                    print(entry['payload'])
                     return
 
         response = gdb_command('-exec-continue', show_gdb_res=True)
         for entry in response:
             if entry['message'] == "error":
+                print(entry['payload'])
                 return
 
 
@@ -106,7 +113,8 @@ def diff_heap_memory(file_path="/tmp/heap_gdb_1593934091_"):
         f = open(dump_filename, "rb")
         memory = f.read()
         logger.info('show_tcache_entry '+ str(cnt))
-        show_tcache_entry(memory, transactions[cnt])
+        # show_tcache_entry(memory, transactions[cnt])
+        parse_tcache(memory, transactions[cnt])
         # try:
         # except:
         #     print("sth wrong")
@@ -123,8 +131,45 @@ def parse_yaml(config_file):
     # for k, v in config.items():
     #     print(f"k = {k}, v = {v}")
 
+def parse_tcache_haeder(mem):
+    global tcache, TCACHE_MAX_BINS
+    tcache['header'] = []
+    tcache['header'].append(byte_to_hex(mem[:0x8], 0x12))
+    tcache['header'].append(byte_to_hex(mem[0x8:0x10], 0x12))
 
-def show_tcache_entry(memory, transaction=""):
+def parse_tcache_perthread_struct_counts(mem):
+    global tcache, TCACHE_MAX_BINS
+    tcache['perthread_struct_count'] = {}
+    for idx in range(TCACHE_MAX_BINS):
+        cnt = mem[idx*1:(idx+1)*1]
+        cnt = u64(cnt.ljust(8, b"\x00"))
+        if cnt != 0:
+            tcache['perthread_struct_count'][hex((idx+1)*0x10).rjust(5)] = hex(cnt).rjust(0xc)
+            # print(f"+ count[{hex((idx+1)*0x10).rjust(5)}]: {hex(cnt).rjust(0xc)}")
+
+
+def parse_tcache_perthread_struct_entries(mem):
+    global tcache, TCACHE_MAX_BINS
+    tcache['perthread_struct_entries'] = {}
+    for idx in range(TCACHE_MAX_BINS):
+        ent = mem[idx*8:(idx+1)*8]
+        if u64(ent) != 0:
+            # if (u64(ent) < heap_start) or (u64(ent) > heap_end):
+            #     print("violation meet !!!!")
+            tcache['perthread_struct_entries'][hex((idx+1)*0x10).rjust(5)] = byte_to_hex(ent, 0xc)
+            # print(f"+ entries[{hex((idx+1)*0x10).rjust(5)}]: {byte_to_hex(ent, 0xc)}")
+
+def check_tcache_malloc_nonheap():
+    global tcache, TCACHE_MAX_BINS
+    global heap_start, heap_end
+    for key in tcache['perthread_struct_entries'].keys():
+        ent = int(tcache['perthread_struct_entries'][key], 16)
+        if (ent < heap_start) or (ent > heap_end):
+            print("nonheap malloc violation meet !!!!")
+
+def parse_tcache(memory, transaction=""):
+    global tcache, TCACHE_MAX_BINS
+    global heap_start, heap_end
     '''
     typedef struct tcache_entry
     {
@@ -137,26 +182,23 @@ def show_tcache_entry(memory, transaction=""):
         tcache_entry *entries[TCACHE_MAX_BINS];
     } tcache_perthread_struct;
     '''
-    TCACHE_MAX_BINS = (0x250 - 0xb0 ) // 0x8
+    
+    parse_tcache_haeder(memory[0x0:0x10])
+    parse_tcache_perthread_struct_counts(memory[0x10:0x50])
+    parse_tcache_perthread_struct_entries(memory[0x50:0x250])
+
+    #### print ####
     print("TCACHE_MAX_BINS: ", TCACHE_MAX_BINS)
     print("transaction: ", transaction)
-    tcache = {}
-    tcache['header'] = memory[0x0:0x10]
-    tcache['perthread_struct_count'] = memory[0x10:0x50]
-    tcache['perthread_struct_entries'] = memory[0x50:0x250]
     print("="*49)
-    print(f"+ header: {byte_to_hex(tcache['header'][:0x8], 0x12)} {byte_to_hex(tcache['header'][0x8:0x10], 0x12)} ")
+    print(f"+ header: {tcache['header'][0]} {tcache['header'][1]} ")
     print("="*49)
-    for idx in range(TCACHE_MAX_BINS):
-        cnt = tcache['perthread_struct_count'][idx*1:(idx+1)*1]
-        cnt = u64(cnt.ljust(8, b"\x00"))
-        if cnt != 0:
-            print(f"+ count[{hex((idx+1)*0x10).rjust(5)}]: {hex(cnt).rjust(0xc)}")
+    for key in tcache['perthread_struct_count'].keys():
+        print(f"+ count[{key}]: {tcache['perthread_struct_count'][key]}")
     print("="*49)
-    for idx in range(TCACHE_MAX_BINS):
-        ent = tcache['perthread_struct_entries'][idx*8:(idx+1)*8]
-        if u64(ent) != 0:
-            print(f"+ entries[{hex((idx+1)*0x10).rjust(5)}]: {byte_to_hex(ent, 0xc)}")
+    for key in tcache['perthread_struct_entries'].keys():
+        print(f"+ entries[{key}]: {tcache['perthread_struct_entries'][key]}")
+    check_tcache_malloc_nonheap()  
 
 # for unknown allocator
 def show_offset_change():
@@ -251,22 +293,41 @@ def gdb_command(cmd, show_gdb_res=True):
     if show_gdb_res: pprint(response)
     return response
 
+def feedback_generator():
+    '''
+    eg. heap_test
+    fd is point to global data
+    but no malloc() to trigger the non-heap allocation
+    so we get the tcache entry and identify the fb 
+    and append malloc transaction 
+    '''
+    file_path = "./tests/how2heap_heap_test/heap_test.c"
+    
+    ### gen new heap_test
+
+
 if __name__ == "__main__":
     # binary = "./tests/how2heap_fastbin_dup/pocs/malloc_non_heap/fastbin_dup.bin/bin/poc_0_0.bin"
     # binary = "./tests/how2heap_fastbin_dup/fastbin_dup.bin"
     # binary = "./tests/how2heap_tcache_poisoning/tcache_poisoning.bin"
     binary = "./tests/how2heap_heap_test/heap_test.bin"
     config_file = "/media/sf_Documents/AEG/AEG/heaphopper_tracer/tcache_parser.yaml"
-    mem_file_path = "/tmp/heap_gdb_1593954912_"
+    # mem_file_path = "/tmp/heap_gdb_1593954912_" # malloc non-heap
+    mem_file_path = "/tmp/heap_gdb_1593955730_" # no malloc() to global data
     caller_address = []
     transactions = []
+    heap_start, heap_end = 0, 0
+    tcache = {}
+    TCACHE_MAX_BINS = (0x250 - 0xb0 ) // 0x8
 
     gdbmi = GdbController()
     get_transaction_breakpoint()
     # print(caller_address)
-    dump_heap_memory(dump_files=True, show_gdb_res=True)
+    dump_heap_memory(dump_files=False, show_gdb_res=True)
     diff_heap_memory(mem_file_path)
 
+    ### gen_zoo
+    print(malloc(0))
 
 
     # dump_main_arena()

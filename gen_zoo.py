@@ -9,7 +9,7 @@ import re
 
 from os.path import basename, dirname, abspath
 
-from ..utils.parse_config import parse_config
+from analysis.utils.parse_config import parse_config
 
 '''
 include header
@@ -599,9 +599,10 @@ def gen_zoo(config_file):
     print('Variants: {}'.format(len(variants)))
     if not config['create_files'] or not len(variants):
         return -1
-    fnames = write_files(config, variants)
-    create_makefile(config['zoo_dir'], fnames, config['allocator'], config['libc'])
-    create_descriptions(config['zoo_dir'], descs, fnames)
+    
+    # fnames = write_files(config, variants)
+    # create_makefile(config['zoo_dir'], fnames, config['allocator'], config['libc'])
+    # create_descriptions(config['zoo_dir'], descs, fnames)
     return 0
 
 

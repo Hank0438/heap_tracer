@@ -13,11 +13,6 @@ allocator: ./libc-2.23/libc.so.6
 libc: ./libc-2.23/libc.so.6
 loader: ./libc-2.23/ld-linux-x86-64.so.2
 
-# allocator: ./libc-2.27/libc.so.6
-# libc: ./libc-2.27/libc.so.6
-# loader: ./libc-2.27/ld-linux-x86-64.so.2
-
-
 #############################
 #    analysis settings      #
 #############################

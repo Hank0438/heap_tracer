@@ -1,7 +1,7 @@
 import argparse
 from analysis.tracer.tracer import trace
 from analysis.gen_pocs import gen_pocs
-
+from gen_zoo import gen_zoo
 '''
 usage:
 ptmalloc:
@@ -39,7 +39,9 @@ if __name__ == '__main__':
         if config is None or binary is None or result is None or desc is None or source is None:
             parser.error('config or binary or result or desc or source path is wrong')
         gen_pocs(config, binary, result, desc, source)
-    # elif args.action == 'gen':
-    #     print("gen code")
+    elif args.action == 'gen':
+        print("gen code")
+        ### usage: python3 start.py gen -a how2heap -e heap_test
+        gen_zoo(config)
     else:
         parser.error('require an action')

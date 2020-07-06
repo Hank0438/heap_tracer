@@ -54,10 +54,10 @@ int main(void) {
 		read(0, ((uint8_t *)ctrl_data_2.global_var)+i, 8);
 	}
 
-	ctrl_data_3.global_var = malloc(malloc_sizes[3]);
-	for (int i=0; i < fill_sizes[3]; i+=8) {
-		read(0, ((uint8_t *)ctrl_data_3.global_var)+i, 8);
-	}
+	// ctrl_data_3.global_var = malloc(malloc_sizes[3]);
+	// for (int i=0; i < fill_sizes[3]; i+=8) {
+	// 	read(0, ((uint8_t *)ctrl_data_3.global_var)+i, 8);
+	// }
 
 	winning();
 	return 0;
